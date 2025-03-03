@@ -12,7 +12,7 @@ class SavedSearch extends Model
     protected $fillable = ['user_id', 'search_parameters'];
 
     protected $casts = [
-        'search_parameters' => 'array',
+        'search_parameters' => 'string',
     ];
 
     public function user()

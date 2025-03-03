@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Repositories\SavedSearchRepository;
 use Illuminate\Database\Eloquent\Casts\Json;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 
 class SavedSearchController extends Controller
 {
@@ -24,22 +25,39 @@ class SavedSearchController extends Controller
     }
 
     // ✅ Save a new search
-    public function store(Request $request): JsonResponse
-    {
+   public function store(Request $request): JsonResponse
+{
+    $userId = Auth::id(); // ✅ Get logged-in user ID
 
-        $request->validate([
-            'search_parameters' => 'required|array',
-        ]);
+    $request->validate([
+        'search_parameters' => 'required|array',
+    ]);
 
-        $this->savedSearchRepo->saveSearch($request->search_parameters);
+    // ✅ Check if search already exists
+    $existingSearch = $this->savedSearchRepo->getUserSavedSearches($userId, $request->search_parameters);
 
-        return response()->json(['message' => 'Search saved successfully']);
+    if ($existingSearch) {
+        return response()->json([
+            'message' => 'Search already exists',
+            'data' => $existingSearch,
+        ], 409); // HTTP 409 Conflict
     }
+
+    // ✅ Save search if not already saved
+    $savedSearch = $this->savedSearchRepo->saveSearch($userId, $request->search_parameters);
+
+    return response()->json([
+        'message' => 'Search saved successfully',
+        'data' => $savedSearch,
+    ], 201); // HTTP 201 Created
+}
+
 
     // ✅ Delete a saved search
     public function destroy($id)
     {
         $this->savedSearchRepo->deleteSavedSearch($id);
         return response()->json(['message' => 'Search deleted successfully']);
+        
     }
 }

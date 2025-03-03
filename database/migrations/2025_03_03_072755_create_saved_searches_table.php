@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('saved_searches', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->json('search_parameters'); // Store search filters in JSON format
+            $table->longText('search_parameters'); // Stores large JSON strings
             $table->timestamps();
         });
     }
