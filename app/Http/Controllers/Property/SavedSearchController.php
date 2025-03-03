@@ -1,31 +1,34 @@
 <?php
+
 namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Repositories\SavedSearchRepository;
-use Illuminate\Database\Eloquent\Casts\Json;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
 class SavedSearchController extends Controller
 {
+    protected $savedSearchRepo;
 
-        protected $savedSearchRepo;
-        public function __construct(SavedSearchRepository $savedSearchRepo)
-        {
-            $this->savedSearchRepo = $savedSearchRepo;
-        }
-    // ✅ Get all saved searches for logged-in user
-    public function index()
+    public function __construct(SavedSearchRepository $savedSearchRepo)
     {
-        return response()->json([
-            'saved_searches' => $this->savedSearchRepo->getUserSavedSearches(),
-        ]);
+        $this->savedSearchRepo = $savedSearchRepo;
     }
 
+    // ✅ Get all saved searches for logged-in user
+    public function index(): JsonResponse
+{
+    $userId = Auth::id(); // ✅ Logged-in user ka ID lein
+    return response()->json([
+        'saved_searches' => $this->savedSearchRepo->getUserSavedSearches($userId),
+    ]);
+}
+
+
     // ✅ Save a new search
-   public function store(Request $request): JsonResponse
+    public function store(Request $request): JsonResponse
 {
     $userId = Auth::id(); // ✅ Get logged-in user ID
 
@@ -33,17 +36,7 @@ class SavedSearchController extends Controller
         'search_parameters' => 'required|array',
     ]);
 
-    // ✅ Check if search already exists
-    $existingSearch = $this->savedSearchRepo->getUserSavedSearches($userId, $request->search_parameters);
-
-    if ($existingSearch) {
-        return response()->json([
-            'message' => 'Search already exists',
-            'data' => $existingSearch,
-        ], 409); // HTTP 409 Conflict
-    }
-
-    // ✅ Save search if not already saved
+    // ✅ Directly save search without checking if it already exists
     $savedSearch = $this->savedSearchRepo->saveSearch($userId, $request->search_parameters);
 
     return response()->json([
@@ -54,10 +47,9 @@ class SavedSearchController extends Controller
 
 
     // ✅ Delete a saved search
-    public function destroy($id)
+    public function destroy($id): JsonResponse
     {
         $this->savedSearchRepo->deleteSavedSearch($id);
         return response()->json(['message' => 'Search deleted successfully']);
-        
     }
 }

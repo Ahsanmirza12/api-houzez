@@ -7,19 +7,28 @@ use Illuminate\Support\Facades\Auth;
 
 class SavedSearchRepository implements SavedSearchRepositoryInterface
 {
-    public function getUserSavedSearches()
+    // ✅ Get user saved searches (optimized)
+    public function getUserSavedSearches($userId, $searchParameters = null)
     {
-        return SavedSearch::where('user_id', Auth::id())->get();
+        $query = SavedSearch::where('user_id', $userId);
+
+        if ($searchParameters) {
+            $query->whereJsonContains('search_parameters', $searchParameters);
+        }
+
+        return $query->first(); // ✅ Fetch first matching search
     }
 
-    public function saveSearch(array $data)
+    // ✅ Save a new search (fixed parameters handling)
+    public function saveSearch($userId, array $searchParameters)
     {
         return SavedSearch::create([
-            'user_id' => Auth::id(),
-            'search_parameters' => $data,
+            'user_id' => $userId,
+            'search_parameters' => json_encode($searchParameters), // ✅ Ensure JSON format
         ]);
     }
 
+    // ✅ Delete a saved search
     public function deleteSavedSearch($id)
     {
         return SavedSearch::where('user_id', Auth::id())->where('id', $id)->delete();
